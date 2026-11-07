@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "藥品儲位查詢",
+  "version": "0.1.0",
+  "description": "選取或輸入藥品關鍵字，查詢 P1／P2／P3／藥庫儲位。",
+  "action": { "default_popup": "src/popup/popup.html", "default_title": "藥品儲位查詢" },
+  "background": { "service_worker": "src/background/service-worker.js" },
+  "permissions": ["contextMenus", "storage"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'"
+  }
+}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>藥品儲位查詢</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<h1>藥局藥品儲位查詢</h1>
+<input id="q" type="search" autocomplete="off" spellcheck="false"
+       placeholder="藥名 / 儲位 / 批價碼 / 物編 / ATC…" aria-label="搜尋藥品">
+<div id="meta" class="meta"></div>
+<div id="state" class="state" role="status" aria-live="polite">資料讀取中…</div>
+<div id="list"></div>
+<div id="oe" class="oe" hidden>
+  <button id="oe-btn" type="button">OpenEvidence</button>
+  <p class="note">僅輸入藥品名稱／規格；不得輸入病人姓名、病歷號、處方或任何可識別健康資料。OpenEvidence 是外部服務，按下後文字會成為其查詢網址的一部分。</p>
+  <div id="oe-err" class="err" role="alert"></div>
+</div>
+<script src="../config.js"></script>
+<script src="../search-core.js"></script>
+<script src="../query-guard.js"></script>
+<script src="../fake-data.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>

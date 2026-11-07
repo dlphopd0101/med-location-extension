@@ -1,0 +1,21 @@
+:root { --ink: #12332a; --green: #1f6b4f; --light: #d9efe4; --grey: #8a9690; --line: #c9d6cf; }
+* { box-sizing: border-box; }
+body { width: 380px; min-height: 200px; margin: 0; padding: 12px; font: 14px/1.4 system-ui, "Microsoft JhengHei", sans-serif; color: var(--ink); background: #fff; }
+h1 { margin: 0 0 8px; font-size: 16px; color: var(--green); }
+#q { width: 100%; padding: 8px 10px; font: inherit; border: 2px solid var(--green); border-radius: 6px; }
+.meta, .state { margin: 6px 0; font-size: 12px; color: var(--grey); }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin: 8px 0; }
+.card .name { font-weight: 700; }
+.card .sub { font-size: 12px; color: var(--grey); }
+.card .code { font-size: 12px; color: var(--grey); margin-bottom: 4px; }
+.tag { display: inline-block; font-size: 11px; padding: 0 6px; margin-left: 4px; border-radius: 8px; background: var(--light); color: var(--green); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 6px; }
+.cell { padding: 4px 8px; border-radius: 4px; background: var(--green); color: #fff; }
+.cell.vault { background: var(--grey); }
+.cell .lab { font-size: 11px; opacity: .85; }
+.cell .val { font-weight: 700; font-size: 15px; }
+.oe { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+.oe button { font: inherit; padding: 6px 12px; border: 2px solid var(--green); background: #fff; border-radius: 6px; cursor: pointer; }
+.note { font-size: 11px; color: var(--grey); }
+.err { color: #a02020; font-size: 12px; }
+[hidden] { display: none !important; }
