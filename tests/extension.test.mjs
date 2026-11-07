@@ -180,3 +180,9 @@ test('版控內不得出現部署 ID（endpoint.local.js 已被忽略）', () =>
   assert.deepEqual(hit, []);
   assert.ok(/^src\/endpoint\.local\.js$/m.test(read('.gitignore')));
 });
+
+test('取得時間顯示：本地時間 HH:MM，補零', () => {
+  assert.equal(core.formatClock(new Date(2026, 10, 7, 9, 5).getTime()), '09:05');
+  assert.equal(core.formatClock(new Date(2026, 10, 7, 23, 59).getTime()), '23:59');
+  assert.equal(core.formatClock(undefined), '');
+});

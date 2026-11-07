@@ -9,6 +9,7 @@
   var oeBtn = document.getElementById('oe-btn');
   var oeErr = document.getElementById('oe-err');
   var retryBtn = document.getElementById('retry');
+  var refreshBtn = document.getElementById('refresh');
   var CACHE_KEY = 'dataCache';
   var rows = [];
   var loading = true;
@@ -81,14 +82,22 @@
   q.addEventListener('input', render);
   if (CONFIG.OPENEVIDENCE_ENABLED) oeBtn.addEventListener('click', openEvidence);
 
-  function setData(d, suffix) {
+  function setData(d, suffix, at) {
     rows = toRows(d);
-    metaEl.textContent = (d.updatedAt ? '資料更新：' + d.updatedAt : '') + (suffix || '');
+    var parts = [];
+    if (d.updatedAt) parts.push('資料更新：' + d.updatedAt);
+    if (at) parts.push('取得 ' + formatClock(at));
+    metaEl.textContent = parts.join(' ｜') + (suffix || '');
+  }
+
+  function setBusy(b) {
+    refreshBtn.disabled = b;
+    refreshBtn.textContent = b ? '更新中…' : '重新整理';
   }
 
   // 資料表快取只放 storage.session（記憶體、瀏覽器關閉即清）：開 popup 不必每次等 GAS 冷啟動。
-  // 10 分鐘內直接用快取；過期則先顯示舊資料、背景更新。
-  function load() {
+  // 10 分鐘內直接用快取；過期則先顯示舊資料、背景更新。force＝使用者按「重新整理」，略過快取新鮮度。
+  function load(force) {
     retryBtn.hidden = true;
     loadError = '';
     if (typeof ENDPOINT_URL !== 'string' || !ENDPOINT_URL) {
@@ -97,23 +106,28 @@
       render();
       return Promise.resolve();
     }
+    refreshBtn.hidden = false;
     var cachedP = hasChrome
       ? chrome.storage.session.get(CACHE_KEY).then(function (v) { return v && v[CACHE_KEY]; }).catch(function () { return null; })
       : Promise.resolve(null);
     return cachedP.then(function (entry) {
       if (entry && entry.data) {
-        try { setData(validateData(entry.data)); } catch (e) { entry = null; }
+        try { setData(validateData(entry.data), '', entry.at); } catch (e) { entry = null; }
       } else { entry = null; }
-      if (entry && isFresh(entry, Date.now())) { loading = false; render(); return; }
+      if (!force && entry && isFresh(entry, Date.now())) { loading = false; render(); return; }
       loading = !rows.length;
       render();
+      setBusy(true);
       return fetchData(ENDPOINT_URL, window.fetch.bind(window)).then(function (d) {
-        setData(d);
+        var at = Date.now();
+        setData(d, '', at);
         loading = false;
+        setBusy(false);
         render();
-        if (hasChrome) chrome.storage.session.set({ [CACHE_KEY]: { at: Date.now(), data: d } }).catch(function () {});
+        if (hasChrome) chrome.storage.session.set({ [CACHE_KEY]: { at: at, data: d } }).catch(function () {});
       }, function (e) {
         loading = false;
+        setBusy(false);
         if (rows.length) {
           metaEl.textContent += ' ｜更新失敗：' + errorMessage(e.code);
         } else {
@@ -125,7 +139,8 @@
     });
   }
 
-  retryBtn.addEventListener('click', function () { loading = true; render(); load(); });
+  retryBtn.addEventListener('click', function () { loading = true; render(); load(true); });
+  refreshBtn.addEventListener('click', function () { load(true); });
   load();
   q.focus();
 

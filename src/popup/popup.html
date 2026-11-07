@@ -10,7 +10,10 @@
 <h1>藥局藥品儲位查詢</h1>
 <input id="q" type="search" autocomplete="off" spellcheck="false"
        placeholder="藥名 / 儲位 / 批價碼 / 物編 / ATC…" aria-label="搜尋藥品">
-<div id="meta" class="meta"></div>
+<div class="metarow">
+  <div id="meta" class="meta"></div>
+  <button id="refresh" type="button" class="retry small" hidden>重新整理</button>
+</div>
 <div id="state" class="state" role="status" aria-live="polite">資料讀取中…</div>
 <button id="retry" type="button" class="retry" hidden>重試</button>
 <div id="list"></div>

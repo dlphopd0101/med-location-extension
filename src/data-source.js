@@ -44,6 +44,13 @@ function isFresh(entry, now) {
   return !!entry && typeof entry.at === 'number' && now - entry.at < CACHE_TTL_MS;
 }
 
+// 擴充套件取得資料的本地時間（與試算表 meta 的 updatedAt 不同），讓使用者分得出「表何時更新」與「我何時抓的」
+function formatClock(ts) {
+  if (typeof ts !== 'number') return '';
+  var d = new Date(ts);
+  return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+}
+
 function errorMessage(code) {
   switch (code) {
     case 'TIMEOUT': return '資料讀取逾時，請稍後再試。';
