@@ -8,7 +8,8 @@ Chrome 擴充套件：在任何網頁選取藥品關鍵字 → 右鍵「查詢�
 ## 載入方式
 1. Chrome 開 `chrome://extensions`，開啟「開發人員模式」。
 2. 「載入未封裝項目」→ 選本資料夾。
-3. 目前資料是**虛構測試資料**（批價碼 `TEST001`…），尚未連正式資料。
+3. 接正式資料：複製 `src/endpoint.example.js` 為 `src/endpoint.local.js`（已被 gitignore），填入查詢專案 Web App 網址（`/exec` 結尾）。沒有這個檔或留空時，會使用**虛構測試資料**（批價碼 `TEST001`…），畫面會註明「測試資料」。
+4. 在 `chrome://extensions` 按該擴充套件的重新整理圖示。
 
 ## 測試
 ```bash

@@ -1,5 +1,24 @@
 # develog
 
+## C-002（2026-11-07）接真實端點
+
+### 事實（已實測）
+- 線上 `?format=json`：HTTP 200、1482 筆、約 7.9 秒（含冷啟動，單次量測）、158 KB；Google 先 302 到 `script.googleusercontent.com/macros/echo`；兩段回應 curl 皆帶 `Access-Control-Allow-Origin: *`（HEAD 請求在第一段回 403，GET 才是真實行為）。
+
+### 決策與前提
+- manifest 不加 host 權限。前提：Google 持續回 `ACAO: *`。若 Chrome 擴充套件環境 fetch 失敗，加 `https://script.google.com/macros/s/*` 與 `https://script.googleusercontent.com/macros/echo*`。【curl 與本機網頁預覽已驗證；擴充套件環境未驗證】
+- 快取整張表於 `storage.session`，TTL 10 分鐘，過期先顯示舊資料並背景更新。理由：冷啟動約 8 秒，不快取每次開 popup 都要等。前提：資料表非查詢紀錄、session storage 只在記憶體；若改成 local 會違反「不保留資料」原則。
+- 部署 ID 放 gitignore 的 `src/endpoint.local.js`；測試掃描版控不得出現 `AKfycb…`。
+- 逾時 20 秒（實測冷啟動約 8 秒）。
+
+### 驗證證據
+- 19 項測試通過；變異測試（移除 `j.error` 與列長度檢查）使「各種失敗都對應明確代碼」失敗，還原後通過。
+- 本機 http 預覽對線上端點：meta 顯示「資料更新：11/05 09:29」，輸入 `a` → 符合 1425 件（顯示前 50）、50 張卡片、console 無訊息。
+- 無效網址（暫時改本機設定，已還原）：顯示「無法連線，請檢查網路後再試。」與重試鈕。【註：404 無 CORS 標頭，所以呈現為 NETWORK 而非 HTTP——訊息略不精確，可接受】
+
+### 未驗證
+- Chrome 擴充套件環境（chrome-extension:// origin）的實際 fetch 與 `storage.session` 快取；右鍵帶入先前已由使用者回報正常。
+
 ## C-001（2026-11-07）MV3 骨架
 
 ### 決策（使用者）
@@ -19,6 +38,9 @@
 - 變異測試：search-core 尾端加一行 → 逐字比對失敗；popup.js 加 `innerHTML` → 靜態檢查失敗；還原後回到 14 通過。
 - popup 以本機 http 預覽：`mat900` → 2 件；`zzzz` → 查無符合品項；`凍1` → 冷藏(凍)；`beta` → 管制；無橫向捲動；console 無訊息；OpenEvidence 區塊隱藏。
 
+### 使用者實測
+- 2026-11-07 使用者在真實 Chrome 載入 unpacked，回報「測試正常」（依建議測項：popup 輸入 `mat900`、右鍵帶入）。我未獨立驗證，也未確認右鍵是自動開 popup 還是徽章提示。
+
 ### 未驗證
-- 在真實 Chrome 載入 unpacked、右鍵帶入、`chrome.action.openPopup()` 行為。
 - 與真實資料（1482 筆）的效能與顯示。
+- `chrome.action.openPopup()` 在使用者 Chrome 版本上是否自動開啟（使用者只回報整體正常）。

@@ -16,6 +16,7 @@ h1 { margin: 0 0 8px; font-size: 16px; color: var(--green); }
 .cell .val { font-weight: 700; font-size: 15px; }
 .oe { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
 .oe button { font: inherit; padding: 6px 12px; border: 2px solid var(--green); background: #fff; border-radius: 6px; cursor: pointer; }
+.retry { font: inherit; padding: 4px 12px; border: 2px solid var(--green); background: #fff; border-radius: 6px; cursor: pointer; }
 .note { font-size: 11px; color: var(--grey); }
 .err { color: #a02020; font-size: 12px; }
 [hidden] { display: none !important; }

@@ -12,6 +12,7 @@
        placeholder="藥名 / 儲位 / 批價碼 / 物編 / ATC…" aria-label="搜尋藥品">
 <div id="meta" class="meta"></div>
 <div id="state" class="state" role="status" aria-live="polite">資料讀取中…</div>
+<button id="retry" type="button" class="retry" hidden>重試</button>
 <div id="list"></div>
 <div id="oe" class="oe" hidden>
   <button id="oe-btn" type="button">OpenEvidence</button>
@@ -22,6 +23,8 @@
 <script src="../search-core.js"></script>
 <script src="../query-guard.js"></script>
 <script src="../fake-data.js"></script>
+<script src="../endpoint.local.js"></script>
+<script src="../data-source.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

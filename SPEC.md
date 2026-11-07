@@ -24,6 +24,8 @@
 - 原始碼無 `innerHTML`／`eval`／遠端程式碼、無網路呼叫、無 console、不寫 local／sync storage。
 - `src/search-core.js` 與 PWA `<search-core>` 逐字相同。
 - popup：輸入 `mat900` 顯示 2 件；`zzzz` 顯示「查無符合品項」；`凍1` 出現「冷藏(凍)」；含 `管2` 的品項出現「管制」；無橫向捲動；OpenEvidence 區塊隱藏。
-### 切片 2（真實資料，未做）
-- 部署 `?format=json` 後，加入該端點 origin 的 host 權限；載入失敗時顯示可理解錯誤，不顯示內部細節。
-- 實機（Chrome 載入 unpacked）驗證右鍵帶入 popup。
+### 切片 2（真實資料）
+- 有 `src/endpoint.local.js` 時載入真實端點，否則用假資料並標註；manifest 仍無 host 權限。
+- 載入中顯示「資料讀取中…」；逾時 20 秒、網路失敗、HTTP 錯誤、格式錯誤、伺服端錯誤各有人話訊息與「重試」，不顯示網址或內部細節；已有舊資料時更新失敗只在更新時間旁註明。
+- 10 分鐘內開 popup 用 `storage.session` 快取，不重打端點。
+- 【已驗證】本機 http 預覽對線上端點：1482 筆，`a` 符合 1425 件顯示前 50，console 無訊息；無效網址顯示錯誤與重試。【待使用者實機】Chrome 擴充套件環境的 CORS 行為與快取。

@@ -8,7 +8,11 @@
   var oeBox = document.getElementById('oe');
   var oeBtn = document.getElementById('oe-btn');
   var oeErr = document.getElementById('oe-err');
+  var retryBtn = document.getElementById('retry');
+  var CACHE_KEY = 'dataCache';
   var rows = [];
+  var loading = true;
+  var loadError = '';
 
   function toRows(data) {
     return data.rows.map(function (r) {
@@ -55,6 +59,8 @@
     listEl.textContent = '';
     oeErr.textContent = '';
     if (CONFIG.OPENEVIDENCE_ENABLED) oeBox.hidden = !text;
+    if (!rows.length && loading) { stateEl.textContent = '資料讀取中…'; return; }
+    if (!rows.length && loadError) { stateEl.textContent = loadError; return; }
     if (!text) { stateEl.textContent = '請輸入關鍵字'; return; }
     var hits = search(rows, text);
     if (!hits.length) { stateEl.textContent = '查無符合品項'; return; }
@@ -75,9 +81,52 @@
   q.addEventListener('input', render);
   if (CONFIG.OPENEVIDENCE_ENABLED) oeBtn.addEventListener('click', openEvidence);
 
-  rows = toRows(FAKE_DATA);
-  metaEl.textContent = FAKE_DATA.updatedAt ? '資料更新：' + FAKE_DATA.updatedAt : '';
-  render();
+  function setData(d, suffix) {
+    rows = toRows(d);
+    metaEl.textContent = (d.updatedAt ? '資料更新：' + d.updatedAt : '') + (suffix || '');
+  }
+
+  // 資料表快取只放 storage.session（記憶體、瀏覽器關閉即清）：開 popup 不必每次等 GAS 冷啟動。
+  // 10 分鐘內直接用快取；過期則先顯示舊資料、背景更新。
+  function load() {
+    retryBtn.hidden = true;
+    loadError = '';
+    if (typeof ENDPOINT_URL !== 'string' || !ENDPOINT_URL) {
+      setData(FAKE_DATA, ' ｜測試資料（未設定端點）');
+      loading = false;
+      render();
+      return Promise.resolve();
+    }
+    var cachedP = hasChrome
+      ? chrome.storage.session.get(CACHE_KEY).then(function (v) { return v && v[CACHE_KEY]; }).catch(function () { return null; })
+      : Promise.resolve(null);
+    return cachedP.then(function (entry) {
+      if (entry && entry.data) {
+        try { setData(validateData(entry.data)); } catch (e) { entry = null; }
+      } else { entry = null; }
+      if (entry && isFresh(entry, Date.now())) { loading = false; render(); return; }
+      loading = !rows.length;
+      render();
+      return fetchData(ENDPOINT_URL, window.fetch.bind(window)).then(function (d) {
+        setData(d);
+        loading = false;
+        render();
+        if (hasChrome) chrome.storage.session.set({ [CACHE_KEY]: { at: Date.now(), data: d } }).catch(function () {});
+      }, function (e) {
+        loading = false;
+        if (rows.length) {
+          metaEl.textContent += ' ｜更新失敗：' + errorMessage(e.code);
+        } else {
+          loadError = errorMessage(e.code);
+          retryBtn.hidden = false;
+        }
+        render();
+      });
+    });
+  }
+
+  retryBtn.addEventListener('click', function () { loading = true; render(); load(); });
+  load();
   q.focus();
 
   // 右鍵選單帶入的文字：讀到後立刻刪除

@@ -15,7 +15,9 @@ function load(...files) {
   for (const f of files) vm.runInContext(read(f), ctx);
   return ctx;
 }
-const core = load('src/search-core.js', 'src/query-guard.js', 'src/config.js', 'src/fake-data.js');
+const core = load('src/search-core.js', 'src/query-guard.js', 'src/config.js', 'src/fake-data.js', 'src/data-source.js');
+// data-source 需要的瀏覽器全域
+Object.assign(core, { AbortController, setTimeout, clearTimeout, JSON });
 const toRows = (d) => d.rows.map(r => core.prepare(Object.fromEntries(d.cols.map((c, i) => [c, r[i]]))));
 const rows = toRows(core.FAKE_DATA);
 const ids = (hits) => JSON.stringify(hits.map(r => r['批價碼']));
@@ -111,7 +113,7 @@ test('原始碼：不用 innerHTML／eval／遠端程式碼', () => {
   }
 });
 
-test('原始碼：本切片零網路呼叫、不寫 local／sync storage、不輸出 console', () => {
+test('原始碼：不直接呼叫網路 API（只有 data-source 的注入 fetchImpl）、不寫 local／sync storage、不輸出 console', () => {
   const banned = /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket)\s*\(|storage\.(local|sync)|console\./;
   for (const f of srcFiles.filter(f => f.endsWith('.js'))) {
     const hit = banned.exec(read(f));
@@ -121,4 +123,60 @@ test('原始碼：本切片零網路呼叫、不寫 local／sync storage、不�
 
 test('fake-data 全是明顯虛構（批價碼皆 TEST 開頭）', () => {
   assert.ok(core.FAKE_DATA.rows.every(r => /^TEST\d+$/.test(r[0])));
+});
+
+// ---- 資料來源 ----
+const goodData = () => ({ cols: [...core.REQUIRED_COLS], rows: [['A1', '', '藥', '', '', '', '', '']], updatedAt: '11/05 09:29' });
+const okRes = (body) => Promise.resolve({ ok: true, text: () => Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)) });
+const code = (p) => p.then(() => 'no-error', (e) => e.code);
+
+test('資料來源：成功時回傳 cols／rows／updatedAt，並以 ?format=json、不帶憑證請求', async () => {
+  let seen;
+  const d = await core.fetchData('https://example.test/exec', (u, o) => { seen = [u, o]; return okRes(goodData()); });
+  assert.equal(seen[0], 'https://example.test/exec?format=json');
+  assert.equal(seen[1].credentials, 'omit');
+  assert.equal(seen[1].cache, 'no-store');
+  assert.equal(JSON.stringify(Object.keys(d)), '["cols","rows","updatedAt"]');
+  assert.equal(d.updatedAt, '11/05 09:29');
+});
+
+test('資料來源：各種失敗都對應明確代碼（不靜默）', async () => {
+  const f = (impl) => code(core.fetchData('https://example.test/exec', impl, 50));
+  assert.equal(await f(() => Promise.resolve({ ok: false, text: () => Promise.resolve('') })), 'HTTP');
+  assert.equal(await f(() => okRes('<html>login</html>')), 'FORMAT');
+  assert.equal(await f(() => okRes({ error: '資料暫時無法取得' })), 'SERVER');
+  assert.equal(await f(() => okRes({ cols: ['批價碼'], rows: [] })), 'FORMAT');
+  const badRow = goodData(); badRow.rows[0] = ['只有一格'];
+  assert.equal(await f(() => okRes(badRow)), 'FORMAT');
+  assert.equal(await f(() => Promise.reject(new TypeError('Failed to fetch'))), 'NETWORK');
+  assert.equal(await f((u, o) => new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(new Error('aborted'))))), 'TIMEOUT');
+});
+
+test('資料來源：錯誤訊息是人話，不含網址、SHEET_ID 或例外字樣', () => {
+  for (const c of ['TIMEOUT', 'NETWORK', 'HTTP', 'SERVER', 'FORMAT', '???']) {
+    const m = core.errorMessage(c);
+    assert.ok(/[一-鿿]/.test(m));
+    assert.ok(!/https?:|SHEET_ID|Error|undefined/.test(m), m);
+  }
+});
+
+test('資料來源：快取新鮮度（10 分鐘）', () => {
+  assert.ok(core.isFresh({ at: 1000 }, 1000 + 9 * 60 * 1000));
+  assert.ok(!core.isFresh({ at: 1000 }, 1000 + 10 * 60 * 1000));
+  assert.ok(!core.isFresh(null, 1));
+  assert.ok(!core.isFresh({}, 1));
+});
+
+test('版控內不得出現部署 ID（endpoint.local.js 已被忽略）', () => {
+  const hit = [];
+  (function walk(d) {
+    for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
+      if (e.name === '.git' || e.name === 'node_modules') continue;
+      const p = d ? d + '/' + e.name : e.name;
+      if (e.isDirectory()) walk(p);
+      else if (p !== 'src/endpoint.local.js' && /AKfycb[A-Za-z0-9_-]{20,}/.test(read(p))) hit.push(p);
+    }
+  })('');
+  assert.deepEqual(hit, []);
+  assert.ok(/^src\/endpoint\.local\.js$/m.test(read('.gitignore')));
 });

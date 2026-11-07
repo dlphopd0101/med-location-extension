@@ -7,9 +7,10 @@
 
 ## 安全與隱私
 - 只給使用者自己 unpacked 載入；不上架、不做企業部署。
-- 不要求網站權限：manifest 不得有 `host_permissions`（接真實端點的切片才加，且只能是該端點 origin）、`<all_urls>`、`content_scripts`。
+- 不要求網站權限：manifest 不得有 `host_permissions`、`<all_urls>`、`content_scripts`。理由：GAS 端點兩段回應（`script.google.com` 302 → `script.googleusercontent.com`）curl 實測皆帶 `Access-Control-Allow-Origin: *`，一般 CORS fetch 即可。**前提：若 Google 日後移除該標頭，fetch 會失敗，此時才加該兩個 origin 的 host 權限**（`https://script.google.com/macros/s/*`、`https://script.googleusercontent.com/macros/echo*`）。
+- 部署 ID（Web App 網址）放 `src/endpoint.local.js`（gitignore），測試會掃描版控內不得出現 `AKfycb…`。
 - 所有輸出一律 `textContent`；禁 `innerHTML`、`eval`、遠端程式碼。
-- 查詢字串、選取文字、結果不寫入 local／sync storage、不輸出 console、不外傳。右鍵帶入的文字只暫存 `storage.session`，popup 讀到即刪。
+- 查詢字串、選取文字、查詢結果不寫入 local／sync storage、不輸出 console、不外傳。右鍵帶入的文字只暫存 `storage.session`，popup 讀到即刪。藥品資料表快取（整張表，非查詢紀錄）只放 `storage.session`（記憶體、瀏覽器關閉即清），TTL 10 分鐘。
 - OpenEvidence 外傳未經院內核准前，`CONFIG.OPENEVIDENCE_ENABLED` 必須為 `false`；開啟時每次都要使用者確認，且通過 `isPhiLike` 檢查。
 - GAS 的 Sheet ID、scriptId、部署網址（若視為不公開）不進版控。
 
